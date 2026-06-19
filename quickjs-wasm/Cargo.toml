@@ -1,0 +1,12 @@
+[package]
+name = "apatheia-quickjs-wasm"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+
+[build-dependencies]
+# `cc` will be used to cross-compile QuickJS C sources to wasm32-wasi
+# Uncomment once vendor sources are in place:
+# cc = "1"
