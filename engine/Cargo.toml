@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-wasmtime = { workspace = true }
+wasmtime = { workspace = true, features = ["pooling-allocator", "cranelift"] }
 wasmtime-wasi = { workspace = true }
 tokio = { workspace = true }
 anyhow = { workspace = true }
@@ -14,3 +14,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 apatheia-telemetry = { path = "../telemetry" }
+
+[dev-dependencies]
+tracing-subscriber = { workspace = true }

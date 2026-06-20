@@ -15,5 +15,9 @@
 //! immune to sandbox-escape bugs in the runtime itself.
 
 pub mod error;
+pub mod sandbox;
+#[cfg(test)]
+mod debug_test;
 
-pub use error::EngineError;
+pub use error::{EngineError, JsError, JsErrorType};
+pub use sandbox::{ExecutionResult, SandboxConfig, SandboxEngine};
