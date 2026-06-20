@@ -7,6 +7,7 @@ Cargo.lock
 quickjs-wasm/build/
 quickjs-wasm/vendor/quickjs/*.o
 *.wasm
+!wasm-runtimes/*.wasm
 
 # Dashboard
 dashboard/node_modules/

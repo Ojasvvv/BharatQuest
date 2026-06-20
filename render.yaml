@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: apatheia-api
+    env: rust
+    plan: starter
+    buildCommand: cargo build --release -p apatheia-api
+    startCommand: ./target/release/apatheia-api
+    envVars:
+      - key: FETCH_ENABLED
+        value: "false"
+      - key: WASM_BINARY_DIR
+        value: "./wasm-runtimes"
+      - key: APATHEIA_API_KEYS
+        sync: false
