@@ -83,17 +83,23 @@ apatheia/
 - [x] Git initialized
 - [x] README with architecture documentation
 
-### Phase 2: QuickJS WASM Build (Pending)
-- [ ] Vendor QuickJS sources
-- [ ] `build.rs` cross-compilation to wasm32-wasi via WASI SDK
-- [ ] Reproducible build producing `quickjs.wasm`
+### Phase 2: QuickJS WASM Build ✅
+- [x] Vendor QuickJS sources
+- [x] `build.rs` cross-compilation to wasm32-wasi via WASI SDK
+- [x] Reproducible build producing `quickjs.wasm`
 
-### Phase 3: Engine Core (Pending)
-- [ ] InstancePre snapshot loading at startup
-- [ ] Per-request Instance cloning with CoW
-- [ ] Memory marshaling (JS string → linear memory → eval → read output)
-- [ ] Fuel metering + wall-clock watchdog
-- [ ] Telemetry: separate cold-instantiation vs total latency measurements
+### Phase 3: Engine Core ✅
+- [x] InstancePre snapshot loading at startup
+- [x] Per-request Instance cloning with CoW
+- [x] Memory marshaling (JS string → linear memory → eval → read output)
+- [x] Fuel metering + wall-clock watchdog
+- [x] Telemetry: separate cold-instantiation vs total latency measurements
+- **Baseline numbers locked in**:
+  - `instance_clone_time_us`: ~20-40µs warm / ~270-490µs cold-cache
+  - `execution_time_us`: ~650-950µs for trivial scripts (dominated by QuickJS context init)
+  - *(Note: A context-prewarming optimization is possible and parked on a branch for later if time allows)*
+- **API Metrics Contract (Phase 4 Dashboard target)**:
+  - `instance_clone_time_us`, `execution_time_us`, `memory_marshal_us`, `total_time_us`, `fuel_consumed`
 
 ### Phase 4: FFI Bridge (Pending)
 - [ ] SSRF-firewalled fetch() host function

@@ -8,17 +8,39 @@
 //! - GET  /health   — Health check with engine readiness status.
 //! - GET  /metrics  — Aggregated execution metrics (latency histograms, etc.)
 
-use axum::{routing::get, Router};
+mod handlers;
+mod models;
+mod state;
+
+use apatheia_engine::RuntimePool;
+use axum::{
+    routing::{get, post},
+    Router,
+};
+use std::path::PathBuf;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use crate::state::AppState;
+
+pub fn build_app(state: AppState) -> Router {
+    Router::new()
+        .route("/health", get(health))
+        .route("/v1/execute", post(handlers::execute_handler))
+        .route("/v1/runtimes", get(handlers::runtimes_handler))
+        .route("/v1/execute/stream", get(handlers::stream_metrics_handler))
+        .layer(TraceLayer::new_for_http())
+        .layer(CorsLayer::permissive())
+        .with_state(state)
+}
 
 #[tokio::main]
 async fn main() {
-    // Initialize tracing
     apatheia_telemetry::init_tracing();
-
     tracing::info!("Apatheia API server starting");
 
-    let app = Router::new()
-        .route("/health", get(health));
+    let pool = RuntimePool::init().await.expect("Failed to initialize RuntimePool");
+    let state = AppState::new(pool);
+
+    let app = build_app(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
         .await
@@ -34,3 +56,6 @@ async fn main() {
 async fn health() -> &'static str {
     "ok"
 }
+
+#[cfg(test)]
+mod handlers_test;

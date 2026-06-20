@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-wasmtime = { workspace = true, features = ["pooling-allocator", "cranelift"] }
-wasmtime-wasi = { workspace = true }
+wasmtime = { features = ["pooling-allocator", "cranelift"], version = "45" }
+wasmtime-wasi = "45"
 tokio = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }

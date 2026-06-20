@@ -2,8 +2,8 @@
 #[cfg(test)]
 pub mod debug_tests {
     use wasmtime::*;
-    use wasmtime_wasi::pipe::MemoryOutputPipe;
-    use wasmtime_wasi::preview1::WasiP1Ctx;
+    use wasmtime_wasi::p2::pipe::MemoryOutputPipe;
+    use wasmtime_wasi::p1::WasiP1Ctx;
     use wasmtime_wasi::WasiCtxBuilder;
     use std::path::PathBuf;
 
@@ -25,7 +25,7 @@ pub mod debug_tests {
         let module = Module::new(&engine, &wasm_bytes).unwrap();
 
         let mut linker: Linker<WasiP1Ctx> = Linker::new(&engine);
-        wasmtime_wasi::preview1::add_to_linker_sync(&mut linker, |ctx| ctx).unwrap();
+        wasmtime_wasi::p1::add_to_linker_sync(&mut linker, |ctx| ctx).unwrap();
 
         let stdout_pipe = MemoryOutputPipe::new(256 * 1024);
         let stderr_pipe = MemoryOutputPipe::new(256 * 1024);

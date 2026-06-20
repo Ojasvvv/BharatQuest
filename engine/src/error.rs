@@ -18,7 +18,7 @@ pub mod status_codes {
 }
 
 /// Classification of JS-level errors.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub enum JsErrorType {
     /// Exception thrown during execution (TypeError, ReferenceError, manual throw, etc.)
     Runtime,
@@ -34,23 +34,31 @@ pub struct JsError {
     pub stack_trace: Option<String>,
 }
 
+use apatheia_telemetry::ExecutionMetrics;
+
 #[derive(Debug, Error)]
 pub enum EngineError {
     #[error("WASM instantiation failed: {0}")]
     Instantiation(#[from] anyhow::Error),
 
     #[error("Execution exceeded fuel limit ({fuel_limit} units)")]
-    FuelExhausted { fuel_limit: u64 },
+    FuelExhausted { fuel_limit: u64, metrics: ExecutionMetrics },
 
     #[error("Execution exceeded wall-clock timeout ({timeout_ms}ms)")]
-    WallClockTimeout { timeout_ms: u64 },
+    WallClockTimeout { timeout_ms: u64, metrics: ExecutionMetrics },
 
     #[error("Memory limit exceeded: WASM linear memory allocation trapped")]
-    MemoryLimitExceeded,
+    MemoryLimitExceeded { metrics: ExecutionMetrics },
 
     #[error("Memory marshaling error: {0}")]
     MemoryMarshal(String),
 
     #[error("QuickJS eval error: {0}")]
     EvalError(String),
+
+    #[error("Runtime unavailable: {0}")]
+    RuntimeUnavailable(String),
+
+    #[error("Internal engine error: {0}")]
+    Internal(String),
 }

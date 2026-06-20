@@ -1,0 +1,4 @@
+[2m2026-06-20T18:33:41.281041Z[0m [32m INFO[0m ThreadId(01) [2mapatheia_api[0m[2m:[0m [2mapi/src/main.rs[0m[2m:[0m[2m38:[0m Apatheia API server starting
+[2m2026-06-20T18:33:48.561067Z[0m [32m INFO[0m ThreadId(01) [2mapatheia_engine::pool[0m[2m:[0m [2mengine/src/pool.rs[0m[2m:[0m[2m105:[0m Runtime loaded successfully [3mruntime[0m[2m=[0m"JavaScript (QuickJS)" [3mpath[0m[2m=[0m./wasm-runtimes/quickjs.wasm [3msize[0m[2m=[0m707468
+[2m2026-06-20T18:33:52.342782Z[0m [32m INFO[0m ThreadId(01) [2mapatheia_engine::pool[0m[2m:[0m [2mengine/src/pool.rs[0m[2m:[0m[2m131:[0m Python Command Runtime loaded successfully [3mruntime[0m[2m=[0m"Python (MicroPython)" [3mpath[0m[2m=[0m./wasm-runtimes/micropython-wasi.wasm [3msize[0m[2m=[0m370907
+[2m2026-06-20T18:33:52.343317Z[0m [32m INFO[0m ThreadId(01) [2mapatheia_api[0m[2m:[0m [2mapi/src/main.rs[0m[2m:[0m[2m49:[0m Listening on 0.0.0.0:3000

@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Apatheia — Sandbox Telemetry</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg: #0A0B0D;
+            --surface: #121317;
+            --surface-2: #17181D;
+            --surface-3: #1C1D23;
+            --border: #1E1F25;
+            --border-strong: #2A2B32;
+            --text: #F0F0EE;
+            --text-secondary: #8A8B93;
+            --text-tertiary: #4A4B52;
+            --mint: #5FE3A8;
+            --mint-dim: #1A3329;
+            --red: #E0625B;
+            --red-dim: #3A1F1D;
+            --amber: #D4974A;
+            --blue: #3A7DD9;
+            --purple: #8B7FE8;
+            --sidebar-w: 200px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            font-size: 13px;
+            line-height: 1.5;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: var(--sidebar-w);
+            flex-shrink: 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .brand-mark {
+            width: 18px;
+            height: 18px;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .brand-mark::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: var(--mint);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px var(--mint);
+        }
+
+        .brand-name {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        /* Nav sections */
+        .nav-section {
+            padding: 16px 0 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            padding: 0 16px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 7px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.1s, background 0.1s;
+            border-left: 2px solid transparent;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: var(--surface-2);
+        }
+
+        .nav-item.active {
+            color: var(--text);
+            border-left-color: var(--mint);
+            background: var(--surface-2);
+        }
+
+        .nav-icon {
+            width: 14px;
+            height: 14px;
+            opacity: 0.5;
+            flex-shrink: 0;
+        }
+
+        .nav-item.active .nav-icon {
+            opacity: 1;
+        }
+
+        .nav-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Sidebar system vitals */
+        .sidebar-vitals {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .vitals-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .vital-row {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .vital-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .vital-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .vital-name {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .vital-val {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+
+        .vital-track {
+            height: 2px;
+            background: var(--surface-3);
+            border-radius: 1px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .vital-fill {
+            height: 100%;
+            border-radius: 1px;
+            background: var(--mint);
+            opacity: 0.55;
+        }
+
+        .vital-fill.med {
+            background: var(--amber);
+        }
+
+        .vital-fill.hi {
+            background: var(--red);
+        }
+
+        /* Environment badge */
+        .env-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .env-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 4px var(--mint);
+            animation: pulse 2.5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.35;
+            }
+        }
+
+        .env-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .env-sub {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+            padding: 4px 16px 12px;
+            line-height: 1.7;
+        }
+
+        /* ===== MAIN AREA ===== */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            height: 52px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .topbar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.01em;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-ts {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .live-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 10px;
+        }
+
+        .live-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 4px var(--mint);
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+
+        /* Scrollable content */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px 60px;
+        }
+
+        /* ===== METRIC ROW ===== */
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .metric {
+            background: var(--surface);
+            padding: 16px 18px 14px;
+            transition: background 0.15s;
+        }
+
+        .metric:hover {
+            background: var(--surface-2);
+        }
+
+        .metric-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .metric-value-row {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-unit {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-bar {
+            height: 2px;
+            background: var(--surface-3);
+            border-radius: 1px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            background: var(--mint);
+            border-radius: 1px;
+            opacity: 0.6;
+        }
+
+        .metric-delta {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .metric-delta.highlight {
+            color: var(--mint);
+        }
+
+        /* ===== PANELS ===== */
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .panel-title-sub {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+
+        .panel-badge {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 7px;
+        }
+
+        .panel-body {
+            padding: 0 16px;
+        }
+
+        /* ===== WATERFALL ===== */
+        .waterfall-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .waterfall-row:last-child {
+            border-bottom: none;
+        }
+
+        .wf-id {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            width: 56px;
+            flex-shrink: 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .wf-bar-track {
+            flex: 1;
+            height: 14px;
+            background: var(--surface-2);
+            border-radius: 2px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .wf-seg-clone {
+            background: var(--blue);
+            height: 100%;
+            opacity: 0.85;
+        }
+
+        .wf-seg-eval {
+            background: var(--mint);
+            height: 100%;
+            opacity: 0.85;
+        }
+
+        .wf-seg-marshal {
+            background: var(--purple);
+            height: 100%;
+            opacity: 0.85;
+        }
+
+        .wf-seg-fail {
+            background: var(--red);
+            height: 100%;
+            opacity: 0.7;
+        }
+
+        .wf-total {
+            font-size: 11px;
+            font-weight: 500;
+            width: 54px;
+            text-align: right;
+            flex-shrink: 0;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .wf-status {
+            width: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dot-ok {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--mint);
+        }
+
+        .dot-err {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--red);
+        }
+
+        .dot-rej {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--amber);
+        }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            padding: 9px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--surface-2);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .legend-swatch {
+            width: 8px;
+            height: 3px;
+            border-radius: 1px;
+        }
+
+        /* ===== LATENCY ===== */
+        .pctl-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pctl-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+
+        .pctl-row:last-child {
+            border-bottom: none;
+        }
+
+        .pctl-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pctl-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+            width: 24px;
+            flex-shrink: 0;
+        }
+
+        .pctl-track {
+            flex: 1;
+            height: 3px;
+            background: var(--surface-3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .pctl-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: var(--mint);
+            opacity: 0.5;
+        }
+
+        .pctl-fill.warn {
+            background: var(--amber);
+        }
+
+        .pctl-fill.crit {
+            background: var(--red);
+        }
+
+        .pctl-value {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .pctl-unit {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+            margin-left: 2px;
+        }
+
+        .pctl-spark-area {
+            padding: 14px 0 4px;
+            border-top: 1px solid var(--border);
+        }
+
+        .pctl-spark-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+
+        .spark-svg {
+            display: block;
+            width: 100%;
+        }
+
+        /* ===== SIMULATOR ===== */
+        .sim-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .sim-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .sim-input-col {
+            padding: 16px;
+            border-right: 1px solid var(--border);
+        }
+
+        .sim-trace-col {
+            padding: 16px;
+        }
+
+        .input-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            margin-bottom: 9px;
+        }
+
+        .code-input {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 10px 12px;
+            color: var(--text);
+            font-size: 12px;
+            width: 100%;
+            min-height: 68px;
+            resize: none;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.6;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .code-input:focus {
+            border-color: var(--border-strong);
+        }
+
+        .code-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .run-btn {
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: 5px;
+            padding: 7px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            letter-spacing: -0.01em;
+            transition: opacity 0.15s;
+        }
+
+        .run-btn:hover {
+            opacity: 0.85;
+        }
+
+        .loop-trace {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .loop-step {
+            display: flex;
+            gap: 11px;
+            padding: 9px 0;
+            position: relative;
+        }
+
+        .loop-step:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 23px;
+            bottom: -3px;
+            width: 1px;
+            background: var(--border-strong);
+        }
+
+        .loop-marker {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 700;
+            margin-top: 1px;
+            position: relative;
+            z-index: 1;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .marker-fail {
+            background: var(--red-dim);
+            color: var(--red);
+            border: 1px solid rgba(224, 98, 91, 0.25);
+        }
+
+        .marker-ok {
+            background: var(--mint-dim);
+            color: var(--mint);
+            border: 1px solid rgba(95, 227, 168, 0.25);
+        }
+
+        .loop-content {
+            flex: 1;
+            padding-top: 1px;
+        }
+
+        .loop-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .loop-detail {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.5;
+        }
+
+        /* ===== REJECTED ===== */
+        .rejected-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--red-dim);
+            border-top: 1px solid rgba(224, 98, 91, 0.15);
+            padding: 9px 16px;
+            gap: 12px;
+        }
+
+        .rejected-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rejected-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1.5px solid var(--red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: var(--red);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .rejected-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .rejected-text b {
+            color: var(--red);
+            font-weight: 500;
+        }
+
+        .rejected-fuel {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-mark"></div>
+            <div class="brand-name">Apatheia</div>
+        </div>
+
+        <div class="env-badge">
+            <div class="env-dot"></div>
+            <div class="env-text">sandbox-prod-01</div>
+        </div>
+        <div class="env-sub">
+            runtime: v8 isolate<br>
+            region: us-east-1<br>
+            uptime: 14d 6h 22m
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-label">Monitoring</div>
+            <div class="nav-item active">
+                <svg class="nav-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="7" width="3" height="6" rx="0.5" fill="currentColor" />
+                    <rect x="5.5" y="4" width="3" height="9" rx="0.5" fill="currentColor" />
+                    <rect x="10" y="1" width="3" height="12" rx="0.5" fill="currentColor" />
+                </svg>
+                Telemetry
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 10 L4 6 L7 8 L10 3 L13 5" stroke="currentColor" stroke-width="1.2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Latency
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2" />
+                    <path d="M7 4v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                </svg>
+                History
+            </div>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-label">Tools</div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2" />
+                    <path d="M4 13h6M7 10v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                </svg>
+                Simulator
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 4h10M2 7h7M2 10h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                </svg>
+                Logs
+            </div>
+            <div class="nav-item">
+                <svg class="nav-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.5 1.5M9.5 9.5L11 11M3 11l1.5-1.5M9.5 4.5L11 3"
+                        stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+                    <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2" />
+                </svg>
+                Config
+            </div>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-label">Alerts</div>
+            <div class="nav-item">
+                <div class="nav-dot" style="background:var(--amber)"></div>
+                p99 spike · 3,981µs
+            </div>
+            <div class="nav-item">
+                <div class="nav-dot" style="background:var(--red)"></div>
+                fuel exhausted
+            </div>
+        </nav>
+
+        <div class="sidebar-vitals">
+            <div class="vitals-label">System</div>
+            <div class="vital-row">
+                <div class="vital-top">
+                    <span class="vital-name">CPU</span>
+                    <span class="vital-val">18%</span>
+                </div>
+                <div class="vital-track">
+                    <div class="vital-fill" style="width:18%"></div>
+                </div>
+            </div>
+            <div class="vital-row">
+                <div class="vital-top">
+                    <span class="vital-name">Mem</span>
+                    <span class="vital-val">61%</span>
+                </div>
+                <div class="vital-track">
+                    <div class="vital-fill med" style="width:61%"></div>
+                </div>
+            </div>
+            <div class="vital-row">
+                <div class="vital-top">
+                    <span class="vital-name">Fuel</span>
+                    <span class="vital-val">100%</span>
+                </div>
+                <div class="vital-track">
+                    <div class="vital-fill hi" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-title">Sandbox Telemetry</div>
+            <div class="topbar-right">
+                <div class="topbar-ts">2026-06-20 · 14:37:02 UTC</div>
+                <div class="live-pill">
+                    <div class="live-dot"></div>
+                    Connected
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="metric-row">
+                <div class="metric">
+                    <div class="metric-label">Instance clone</div>
+                    <div class="metric-value-row">
+                        <div class="metric-value">270</div>
+                        <div class="metric-unit">µs</div>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width:34%"></div>
+                    </div>
+                    <div class="metric-delta">p50 · last 200 runs</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">JS evaluation</div>
+                    <div class="metric-value-row">
+                        <div class="metric-value">743</div>
+                        <div class="metric-unit">µs</div>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width:65%"></div>
+                    </div>
+                    <div class="metric-delta">p50 · last 200 runs</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Memory marshal</div>
+                    <div class="metric-value-row">
+                        <div class="metric-value">22</div>
+                        <div class="metric-unit">µs</div>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width:8%"></div>
+                    </div>
+                    <div class="metric-delta">p50 · last 200 runs</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Total request</div>
+                    <div class="metric-value-row">
+                        <div class="metric-value">792</div>
+                        <div class="metric-unit">µs</div>
+                    </div>
+                    <div class="metric-bar" style="background:var(--mint-dim)">
+                        <div class="metric-bar-fill" style="width:0.5%;background:var(--mint);opacity:1"></div>
+                    </div>
+                    <div class="metric-delta highlight">189× faster than MicroVM cold start</div>
+                </div>
+            </div>
+
+            <div class="grid-main">
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <div class="panel-title">Execution waterfall</div>
+                            <div class="panel-title-sub">Last 6 requests · proportional timing</div>
+                        </div>
+                        <div class="panel-badge">live</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="waterfall-row">
+                            <div class="wf-id">req-a31f</div>
+                            <div class="wf-bar-track">
+                                <div class="wf-seg-clone" style="width:30%"></div>
+                                <div class="wf-seg-eval" style="width:60%"></div>
+                                <div class="wf-seg-marshal" style="width:10%"></div>
+                            </div>
+                            <div class="wf-status">
+                                <div class="dot-ok"></div>
+                            </div>
+                            <div class="wf-total">792µs</div>
+                        </div>
+                        <div class="waterfall-row">
+                            <div class="wf-id">req-7c92</div>
+                            <div class="wf-bar-track">
+                                <div class="wf-seg-clone" style="width:12%"></div>
+                                <div class="wf-seg-eval" style="width:80%"></div>
+                                <div class="wf-seg-marshal" style="width:8%"></div>
+                            </div>
+                            <div class="wf-status">
+                                <div class="dot-err"></div>
+                            </div>
+                            <div class="wf-total">3,981µs</div>
+                        </div>
+                        <div class="waterfall-row">
+                            <div class="wf-id">req-019e</div>
+                            <div class="wf-bar-track">
+                                <div class="wf-seg-clone" style="width:38%"></div>
+                                <div class="wf-seg-eval" style="width:52%"></div>
+                                <div class="wf-seg-marshal" style="width:10%"></div>
+                            </div>
+                            <div class="wf-status">
+                                <div class="dot-ok"></div>
+                            </div>
+                            <div class="wf-total">659µs</div>
+                        </div>
+                        <div class="waterfall-row">
+                            <div class="wf-id">req-b5d4</div>
+                            <div class="wf-bar-track">
+                                <div class="wf-seg-fail" style="width:100%"></div>
+                            </div>
+                            <div class="wf-status">
+                                <div class="dot-rej"></div>
+                            </div>
+                            <div class="wf-total">5,715µs</div>
+                        </div>
+                        <div class="waterfall-row">
+                            <div class="wf-id">req-44ab</div>
+                            <div class="wf-bar-track">
+                                <div class="wf-seg-clone" style="width:25%"></div>
+                                <div class="wf-seg-eval" style="width:65%"></div>
+                                <div class="wf-seg-marshal" style="width:10%"></div>
+                            </div>
+                            <div class="wf-status">
+                                <div class="dot-ok"></div>
+                            </div>
+                            <div class="wf-total">812µs</div>
+                        </div>
+                        <div class="waterfall-row">
+                            <div class="wf-id">req-2f10</div>
+                            <div class="wf-bar-track">
+                                <div class="wf-seg-clone" style="width:33%"></div>
+                                <div class="wf-seg-eval" style="width:57%"></div>
+                                <div class="wf-seg-marshal" style="width:10%"></div>
+                            </div>
+                            <div class="wf-status">
+                                <div class="dot-ok"></div>
+                            </div>
+                            <div class="wf-total">701µs</div>
+                        </div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-swatch" style="background:var(--blue)"></div>clone
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-swatch" style="background:var(--mint)"></div>eval
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-swatch" style="background:var(--purple)"></div>marshal
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-swatch" style="background:var(--red);opacity:0.7"></div>trapped /
+                            rejected
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <div class="panel-title">Latency distribution</div>
+                            <div class="panel-title-sub">Total request time · n=200</div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="pctl-list">
+                            <div class="pctl-row">
+                                <div class="pctl-left">
+                                    <div class="pctl-label">p50</div>
+                                    <div class="pctl-track">
+                                        <div class="pctl-fill" style="width:14%"></div>
+                                    </div>
+                                </div>
+                                <div class="pctl-value">792<span class="pctl-unit">µs</span></div>
+                            </div>
+                            <div class="pctl-row">
+                                <div class="pctl-left">
+                                    <div class="pctl-label">p90</div>
+                                    <div class="pctl-track">
+                                        <div class="pctl-fill" style="width:23%"></div>
+                                    </div>
+                                </div>
+                                <div class="pctl-value">1,340<span class="pctl-unit">µs</span></div>
+                            </div>
+                            <div class="pctl-row">
+                                <div class="pctl-left">
+                                    <div class="pctl-label">p99</div>
+                                    <div class="pctl-track">
+                                        <div class="pctl-fill warn" style="width:70%"></div>
+                                    </div>
+                                </div>
+                                <div class="pctl-value">3,981<span class="pctl-unit">µs</span></div>
+                            </div>
+                            <div class="pctl-row">
+                                <div class="pctl-left">
+                                    <div class="pctl-label">max</div>
+                                    <div class="pctl-track">
+                                        <div class="pctl-fill crit" style="width:100%"></div>
+                                    </div>
+                                </div>
+                                <div class="pctl-value">5,715<span class="pctl-unit">µs</span></div>
+                            </div>
+                        </div>
+                        <div class="pctl-spark-area">
+                            <div class="pctl-spark-label">Request latency · last 30 runs</div>
+                            <svg class="spark-svg" height="38" viewBox="0 0 240 38" xmlns="http://www.w3.org/2000/svg"
+                                preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#5FE3A8" stop-opacity="0.15" />
+                                        <stop offset="100%" stop-color="#5FE3A8" stop-opacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                <path
+                                    d="M0,32 L8,29 L16,31 L24,26 L32,33 L40,28 L48,30 L56,27 L64,34 L72,12 L80,29 L88,31 L96,26 L104,28 L112,30 L120,25 L128,27 L136,31 L144,8 L152,28 L160,30 L168,26 L176,31 L184,28 L192,29 L200,26 L208,30 L216,27 L224,29 L232,28 L240,26 L240,38 L0,38 Z"
+                                    fill="url(#sg)" />
+                                <path
+                                    d="M0,32 L8,29 L16,31 L24,26 L32,33 L40,28 L48,30 L56,27 L64,34 L72,12 L80,29 L88,31 L96,26 L104,28 L112,30 L120,25 L128,27 L136,31 L144,8 L152,28 L160,30 L168,26 L176,31 L184,28 L192,29 L200,26 L208,30 L216,27 L224,29 L232,28 L240,26"
+                                    fill="none" stroke="#5FE3A8" stroke-width="1" stroke-opacity="0.45" />
+                                <circle cx="72" cy="12" r="2" fill="#D4974A" opacity="0.8" />
+                                <circle cx="144" cy="8" r="2" fill="#E0625B" opacity="0.8" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="sim-panel">
+                <div class="panel-head">
+                    <div>
+                        <div class="panel-title">Agent simulator</div>
+                        <div class="panel-title-sub">Run JS through the sandbox and watch the self-healing loop</div>
+                    </div>
+                    <div class="panel-badge">interactive</div>
+                </div>
+                <div class="sim-body">
+                    <div class="sim-input-col">
+                        <div class="input-label">Input</div>
+                        <textarea class="code-input" spellcheck="false">const data = [1, 2];
+console.log(data.mapIsCool(x => x));</textarea>
+                        <button class="run-btn">Run in sandbox</button>
+                    </div>
+                    <div class="sim-trace-col">
+                        <div class="input-label">Execution trace</div>
+                        <div class="loop-trace">
+                            <div class="loop-step">
+                                <div class="loop-marker marker-fail">1</div>
+                                <div class="loop-content">
+                                    <div class="loop-title">Execution failed — TypeError</div>
+                                    <div class="loop-detail">data.mapIsCool is not a function<br>trapped in 3,981µs
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="loop-step">
+                                <div class="loop-marker marker-fail">2</div>
+                                <div class="loop-content">
+                                    <div class="loop-title">Feedback returned to model</div>
+                                    <div class="loop-detail">llm_feedback_prompt injected into context</div>
+                                </div>
+                            </div>
+                            <div class="loop-step">
+                                <div class="loop-marker marker-ok">3</div>
+                                <div class="loop-content">
+                                    <div class="loop-title">Corrected execution succeeded</div>
+                                    <div class="loop-detail">data.map(x => x)<br>completed in 792µs</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rejected-banner">
+                    <div class="rejected-left">
+                        <div class="rejected-icon">!</div>
+                        <div class="rejected-text">Last <b>rejected</b> request — out_of_fuel</div>
+                    </div>
+                    <div class="rejected-fuel">fuel_consumed: 50,000,000 / 50,000,000</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

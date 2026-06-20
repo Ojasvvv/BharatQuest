@@ -14,13 +14,13 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 pub struct ExecutionMetrics {
     /// Time to instantiate a fresh WASM Instance from the InstancePre snapshot (µs).
-    pub instantiation_us: u64,
+    pub instance_clone_time_us: u64,
     /// Time spent inside the QuickJS eval call (µs).
-    pub eval_us: u64,
+    pub execution_time_us: u64,
     /// Time to marshal data in/out of WASM linear memory (µs).
     pub memory_marshal_us: u64,
     /// Total wall-clock time from request receipt to response send (µs).
-    pub total_request_us: u64,
+    pub total_time_us: u64,
     /// Fuel consumed by this execution (Wasmtime fuel units).
     pub fuel_consumed: u64,
 }

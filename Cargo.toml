@@ -15,12 +15,14 @@ license = "MIT"
 
 [workspace.dependencies]
 # WASM runtime
-wasmtime = "29"
-wasmtime-wasi = "29"
+wasmtime = "45"
+wasmtime-wasi = "45"
 
 # Async runtime & web framework
 tokio = { version = "1", features = ["full"] }
-axum = { version = "0.8", features = ["ws"] }
+axum = { version = "0.8", features = ["ws", "macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
