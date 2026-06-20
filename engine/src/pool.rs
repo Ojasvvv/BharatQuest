@@ -5,6 +5,10 @@ use wasmtime_wasi::p1::WasiP1Ctx;
 
 use crate::runtime::{Runtime, RuntimeHandle, RuntimeStyle, execute_python};
 
+thread_local! {
+    pub static FETCH_RESULT: std::cell::RefCell<Option<Vec<u8>>> = std::cell::RefCell::new(None);
+}
+
 pub struct RuntimePool {
     /// Pooling engine for Reactor modules (JavaScript/QuickJS).
     /// Uses pooling allocator for fast CoW instance cloning.
@@ -99,6 +103,57 @@ impl RuntimePool {
                                 {
                                     error!(runtime = runtime.label(), error = %e, "Failed to add WASI to linker");
                                     continue;
+                                }
+
+                                if let Err(e) = linker.func_wrap("env", "host_fetch_start", |mut caller: wasmtime::Caller<'_, WasiP1Ctx>, url_ptr: u32, url_len: u32, out_len_ptr: u32| -> i32 {
+                                    let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
+                                    let mut url_bytes = vec![0u8; url_len as usize];
+                                    if memory.read(&caller, url_ptr as usize, &mut url_bytes).is_err() {
+                                        return 1;
+                                    }
+                                    let url_str = String::from_utf8_lossy(&url_bytes).to_string();
+                                    let rt = tokio::runtime::Builder::new_current_thread()
+                                        .enable_all()
+                                        .build()
+                                        .expect("Failed to build current_thread runtime for fetch bridge");
+                                        
+                                    let result = rt.block_on(async {
+                                        apatheia_ffi_bridge::fetch(&url_str).await
+                                    });
+                                    
+                                    match result {
+                                        Ok(body) => {
+                                            let bytes = body.into_bytes();
+                                            let len = bytes.len() as u32;
+                                            FETCH_RESULT.with(|r| *r.borrow_mut() = Some(bytes));
+                                            if memory.write(&mut caller, out_len_ptr as usize, &len.to_le_bytes()).is_err() {
+                                                return 1;
+                                            }
+                                            0
+                                        }
+                                        Err(e) => {
+                                            let err_msg = e.to_string();
+                                            let bytes = err_msg.into_bytes();
+                                            let len = bytes.len() as u32;
+                                            FETCH_RESULT.with(|r| *r.borrow_mut() = Some(bytes));
+                                            if memory.write(&mut caller, out_len_ptr as usize, &len.to_le_bytes()).is_err() {
+                                                return 1;
+                                            }
+                                            1
+                                        }
+                                    }
+                                }) {
+                                    error!("Failed to register host_fetch_start: {}", e);
+                                }
+
+                                if let Err(e) = linker.func_wrap("env", "host_fetch_read", |mut caller: wasmtime::Caller<'_, WasiP1Ctx>, out_ptr: u32| {
+                                    let data = FETCH_RESULT.with(|r| r.borrow_mut().take());
+                                    if let Some(bytes) = data {
+                                        let memory = caller.get_export("memory").unwrap().into_memory().unwrap();
+                                        let _ = memory.write(&mut caller, out_ptr as usize, &bytes);
+                                    }
+                                }) {
+                                    error!("Failed to register host_fetch_read: {}", e);
                                 }
                                 match linker.instantiate_pre(&module) {
                                     Ok(pre) => {

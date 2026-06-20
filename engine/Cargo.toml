@@ -14,6 +14,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 apatheia-telemetry = { path = "../telemetry" }
+apatheia-ffi-bridge = { path = "../ffi-bridge" }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true }

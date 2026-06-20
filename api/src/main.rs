@@ -11,6 +11,7 @@
 mod handlers;
 mod models;
 mod state;
+mod middleware;
 
 use apatheia_engine::RuntimePool;
 use axum::{
@@ -22,11 +23,15 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use crate::state::AppState;
 
 pub fn build_app(state: AppState) -> Router {
+    let protected_routes = Router::new()
+        .route("/v1/execute", post(handlers::execute_handler))
+        .route("/v1/execute/stream", get(handlers::stream_metrics_handler))
+        .route_layer(axum::middleware::from_fn_with_state(state.clone(), middleware::auth_and_rate_limit));
+
     Router::new()
         .route("/health", get(health))
-        .route("/v1/execute", post(handlers::execute_handler))
         .route("/v1/runtimes", get(handlers::runtimes_handler))
-        .route("/v1/execute/stream", get(handlers::stream_metrics_handler))
+        .merge(protected_routes)
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())
         .with_state(state)

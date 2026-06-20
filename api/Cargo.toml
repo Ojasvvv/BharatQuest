@@ -19,6 +19,8 @@ tower-http = { workspace = true, features = ["cors"] }
 apatheia-engine = { path = "../engine" }
 apatheia-ffi-bridge = { path = "../ffi-bridge" }
 apatheia-telemetry = { path = "../telemetry" }
+dashmap = "6.2.1"
+governor = "0.10.4"
 
 [dev-dependencies]
 http-body-util = "0.1.0"

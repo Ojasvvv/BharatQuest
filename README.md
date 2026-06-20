@@ -2,6 +2,10 @@
 
 **Sub-millisecond, WASM-based code sandbox for autonomous AI agents.**
 
+## Current Status
+
+**Authentication**: All endpoints (except `/health` and `/v1/runtimes`) are protected. Requests must include an `X-API-Key` header. Valid keys must be configured via the `APATHEIA_API_KEYS` environment variable (comma-separated list of keys) prior to startup. Rate limiting is enforced per key.
+
 Apatheia executes untrusted JavaScript in a sandboxed QuickJS interpreter compiled to
 WebAssembly (`wasm32-wasi`), providing memory-safe isolation by construction via WASM
 linear memory. The sandbox relies on [Wasmtime](https://wasmtime.dev/)'s correctness

@@ -26,6 +26,9 @@ pub mod debug_tests {
 
         let mut linker: Linker<WasiP1Ctx> = Linker::new(&engine);
         wasmtime_wasi::p1::add_to_linker_sync(&mut linker, |ctx| ctx).unwrap();
+        
+        linker.func_wrap("env", "host_fetch_start", |_: wasmtime::Caller<'_, WasiP1Ctx>, _: i32, _: i32, _: i32| -> i32 { 1 }).unwrap();
+        linker.func_wrap("env", "host_fetch_read", |_: wasmtime::Caller<'_, WasiP1Ctx>, _: i32| { }).unwrap();
 
         let stdout_pipe = MemoryOutputPipe::new(256 * 1024);
         let stderr_pipe = MemoryOutputPipe::new(256 * 1024);

@@ -82,11 +82,12 @@ pub async fn execute_handler(
             return (
                 StatusCode::TOO_MANY_REQUESTS,
                 axum::Json(serde_json::json!({
-                    "error": "max_iterations_exceeded",
+                    "status": "error",
+                    "message": "Self-healing loop exceeded maximum retry attempts.",
+                    "error_code": "max_iterations_exceeded",
                     "request_id": req.request_id,
                     "parent_request_id": parent_id,
-                    "max_iterations": 3,
-                    "reason": "Self-healing loop exceeded maximum retry attempts."
+                    "max_iterations": 3
                 }))
             ).into_response();
         }

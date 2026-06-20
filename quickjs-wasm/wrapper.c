@@ -101,6 +101,51 @@ static JSValue js_console_log(JSContext *ctx, JSValueConst this_val,
     return JS_UNDEFINED;
 }
 
+/* ---------- Custom fetch implementation ---------- */
+
+__attribute__((import_module("env"), import_name("host_fetch_start")))
+extern int host_fetch_start(const char* url_ptr, size_t url_len, size_t* out_len);
+
+__attribute__((import_module("env"), import_name("host_fetch_read")))
+extern void host_fetch_read(char* out_body);
+
+static JSValue js_fetch(JSContext *ctx, JSValueConst this_val,
+                        int argc, JSValueConst *argv) {
+    if (argc < 1) return JS_ThrowTypeError(ctx, "fetch requires 1 argument");
+    
+    size_t url_len;
+    const char *url_str = JS_ToCStringLen(ctx, &url_len, argv[0]);
+    if (!url_str) return JS_EXCEPTION;
+    
+    size_t out_len = 0;
+    int result = host_fetch_start(url_str, url_len, &out_len);
+    JS_FreeCString(ctx, url_str);
+    
+    if (result == 0) {
+        if (out_len > 0) {
+            char* buf = malloc(out_len);
+            if (!buf) return JS_ThrowOutOfMemory(ctx);
+            host_fetch_read(buf);
+            JSValue ret = JS_NewStringLen(ctx, buf, out_len);
+            free(buf);
+            return ret;
+        } else {
+            return JS_NewString(ctx, "");
+        }
+    } else {
+        if (out_len > 0) {
+            char* buf = malloc(out_len);
+            if (!buf) return JS_ThrowOutOfMemory(ctx);
+            host_fetch_read(buf);
+            JSValue err = JS_ThrowInternalError(ctx, "%.*s", (int)out_len, buf);
+            free(buf);
+            return err;
+        } else {
+            return JS_ThrowInternalError(ctx, "Fetch failed");
+        }
+    }
+}
+
 /* Install console object with log/warn/error methods */
 static void install_console(JSContext *ctx) {
     JSValue global = JS_GetGlobalObject(ctx);
@@ -116,6 +161,10 @@ static void install_console(JSContext *ctx) {
         JS_NewCFunction(ctx, js_console_log, "info", 1));
 
     JS_SetPropertyStr(ctx, global, "console", console);
+    
+    JS_SetPropertyStr(ctx, global, "fetch", 
+        JS_NewCFunction(ctx, js_fetch, "fetch", 1));
+        
     JS_FreeValue(ctx, global);
 }
 
