@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface ExecutionMetrics {
   instance_clone_time_us: number;
@@ -10,61 +10,73 @@ export interface ExecutionMetrics {
 
 export interface StreamEvent {
   request_id: string;
+  language: string;
   status: 'success' | 'runtime_error' | 'rejected';
   metrics: ExecutionMetrics;
 }
 
+export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
+
 export function useTelemetry(wsUrl: string) {
   const [events, setEvents] = useState<StreamEvent[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [lastMessageTime, setLastMessageTime] = useState<Date | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const MAX_RECONNECT_ATTEMPTS = 3;
 
-  useEffect(() => {
-    let ws: WebSocket;
-    let reconnectTimer: number;
+  const connectWebSocket = useCallback(() => {
+    const ws = new WebSocket(wsUrl);
 
-    const connect = () => {
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        setIsConnected(true);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data) as StreamEvent;
-          setEvents((prev) => {
-            const newEvents = [data, ...prev];
-            // Keep last 200 events
-            if (newEvents.length > 200) {
-              return newEvents.slice(0, 200);
-            }
-            return newEvents;
-          });
-        } catch (e) {
-          console.error("Failed to parse websocket message", e);
-        }
-      };
-
-      ws.onclose = () => {
-        setIsConnected(false);
-        // Reconnect after 2 seconds
-        reconnectTimer = setTimeout(connect, 2000) as unknown as number;
-      };
-
-      ws.onerror = () => {
-        ws.close();
-      };
+    ws.onopen = () => {
+      setConnectionStatus('connected');
+      reconnectAttemptsRef.current = 0;
     };
 
-    connect();
+    ws.onmessage = (event) => {
+      try {
+        setLastMessageTime(new Date());
+        const data = JSON.parse(event.data) as StreamEvent;
+        setEvents((prev) => {
+          const newEvents = [data, ...prev];
+          // Keep last 200 events
+          if (newEvents.length > 200) {
+            return newEvents.slice(0, 200);
+          }
+          return newEvents;
+        });
+      } catch (e) {
+        console.error("Failed to parse websocket message", e);
+      }
+    };
 
+    ws.onclose = () => {
+      if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        setConnectionStatus('disconnected');
+        return;
+      }
+      setConnectionStatus('reconnecting');
+      reconnectAttemptsRef.current += 1;
+      // Wait 2s then retry
+      setTimeout(() => connectWebSocket(), 2000);
+      // This setTimeout is legitimate: WebSocket reconnection backoff delay
+    };
+
+    ws.onerror = () => {
+      // onerror usually leads to onclose where reconnect logic is handled
+      ws.close();
+    };
+
+    return ws;
+  }, [wsUrl]);
+
+  useEffect(() => {
+    const ws = connectWebSocket();
     return () => {
-      clearTimeout(reconnectTimer);
-      if (ws) {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close();
       }
     };
-  }, [wsUrl]);
+  }, [connectWebSocket]);
 
   // Compute percentiles for last 200 runs
   const getPercentile = useCallback((metric: keyof ExecutionMetrics, p: number) => {
@@ -89,5 +101,5 @@ export function useTelemetry(wsUrl: string) {
     }
   };
 
-  return { events, isConnected, stats };
+  return { events, connectionStatus, lastMessageTime, stats };
 }

@@ -26,5 +26,8 @@ Thumbs.db
 .env
 .env.local
 
+# Logs and scratch
+*.log
+*.txt
 wasi-sdk-25.0-x86_64-linux/
 target/

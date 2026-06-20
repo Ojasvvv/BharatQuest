@@ -27,10 +27,11 @@ async fn test_valid_execution_success() {
 
     let req_body = ExecuteRequest {
         request_id: "req-123".to_string(),
-        language: "javascript".to_string(),
+        language: Some("javascript".to_string()),
         code: "console.log('hello world');".to_string(),
         timeout_ms: 1000,
         memory_limit_mb: 128,
+        parent_request_id: None,
     };
 
     let request = Request::builder()
@@ -48,6 +49,7 @@ async fn test_valid_execution_success() {
 
     assert_eq!(res["status"], "success");
     assert_eq!(res["request_id"], "req-123");
+    assert_eq!(res["language"], "javascript");
     assert_eq!(res["stdout"], "hello world\n");
     assert!(res["metrics"].is_object());
 }
@@ -58,10 +60,11 @@ async fn test_hallucinated_method_runtime_error() {
 
     let req_body = ExecuteRequest {
         request_id: "req-err".to_string(),
-        language: "javascript".to_string(),
+        language: Some("javascript".to_string()),
         code: "[1,2].mapIsCool(x => x)".to_string(),
         timeout_ms: 1000,
         memory_limit_mb: 128,
+        parent_request_id: None,
     };
 
     let request = Request::builder()
@@ -79,6 +82,7 @@ async fn test_hallucinated_method_runtime_error() {
 
     assert_eq!(res["status"], "runtime_error");
     assert_eq!(res["request_id"], "req-err");
+    assert_eq!(res["language"], "javascript");
     assert_eq!(res["error_telemetry"]["type"], "RuntimeError");
 
     assert!(res["llm_feedback_prompt"]["content"].as_str().unwrap().contains("Execution failed: RuntimeError"));
@@ -90,10 +94,11 @@ async fn test_timeout_rejection() {
 
     let req_body = ExecuteRequest {
         request_id: "req-to".to_string(),
-        language: "javascript".to_string(),
+        language: Some("javascript".to_string()),
         code: "while(true){}".to_string(), // Actually this hits fuel exhaustion first since fuel limits are enforced. But let's test input validation timeout first.
         timeout_ms: 99999999, // Over MAX_TIMEOUT_MS
         memory_limit_mb: 128,
+        parent_request_id: None,
     };
 
     let request = Request::builder()
@@ -113,10 +118,11 @@ async fn test_infinite_loop_fuel_trap_rejection() {
 
     let req_body = ExecuteRequest {
         request_id: "req-fuel".to_string(),
-        language: "javascript".to_string(),
+        language: Some("javascript".to_string()),
         code: "while(true){}".to_string(),
         timeout_ms: 5000,
         memory_limit_mb: 128,
+        parent_request_id: None,
     };
 
     let request = Request::builder()
@@ -133,7 +139,46 @@ async fn test_infinite_loop_fuel_trap_rejection() {
     let res: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(res["status"], "rejected");
+    assert_eq!(res["request_id"], "req-fuel");
+    assert_eq!(res["language"], "javascript");
     assert_eq!(res["reason"], "out_of_fuel");
     assert!(res["metrics"].is_object());
     assert!(res["metrics"]["fuel_consumed"].as_u64().unwrap() > 0);
+}
+
+#[tokio::test]
+async fn test_max_iterations() {
+    let app = setup_app().await;
+
+    for i in 1..=4 {
+        let req_body = ExecuteRequest {
+            request_id: format!("req-iter-{}", i),
+            language: Some("javascript".to_string()),
+            code: "throw new Error('fail');".to_string(),
+            timeout_ms: 5000,
+            memory_limit_mb: 128,
+            parent_request_id: Some("parent-123".to_string()),
+        };
+
+        let request = Request::builder()
+            .method("POST")
+            .uri("/v1/execute")
+            .header("Content-Type", "application/json")
+            .body(Body::from(serde_json::to_vec(&req_body).unwrap()))
+            .unwrap();
+
+        let response = app.clone().oneshot(request).await.unwrap();
+        
+        if i <= 3 {
+            assert_eq!(response.status(), StatusCode::OK);
+            // After success, it removes from retry_counts!
+            // Wait, if it succeeds, it clears the parent_id. We need it to fail to increment.
+            // So code must fail.
+        } else {
+            assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+            let body = response.into_body().collect().await.unwrap().to_bytes();
+            let res: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(res["error"], "max_iterations_exceeded");
+        }
+    }
 }

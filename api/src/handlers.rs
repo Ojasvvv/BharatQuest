@@ -48,12 +48,49 @@ pub async fn execute_handler(
         )
             .into_response();
     }
-    let lang_str = req.language.to_lowercase();
+    let language = match &req.language {
+        Some(l) => l,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                axum::Json(serde_json::json!({
+                    "error": "missing_field",
+                    "field": "language"
+                }))
+            ).into_response();
+        }
+    };
+    let lang_str = language.to_lowercase();
     let runtime = match lang_str.as_str() {
         "javascript" | "js" => apatheia_engine::Runtime::JavaScript,
         "python" | "py" => apatheia_engine::Runtime::Python,
-        _ => return (StatusCode::BAD_REQUEST, "Unsupported language").into_response(),
+        _ => return (
+            StatusCode::BAD_REQUEST,
+            axum::Json(serde_json::json!({
+                "error": "unsupported_language",
+                "supported": ["javascript", "python"]
+            }))
+        ).into_response(),
     };
+
+    if let Some(parent_id) = &req.parent_request_id {
+        let mut counts = state.retry_counts.lock().unwrap();
+        let entry = counts.entry(parent_id.clone()).or_insert((0, std::time::Instant::now()));
+        entry.0 += 1;
+        entry.1 = std::time::Instant::now();
+        if entry.0 > 3 {
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                axum::Json(serde_json::json!({
+                    "error": "max_iterations_exceeded",
+                    "request_id": req.request_id,
+                    "parent_request_id": parent_id,
+                    "max_iterations": 3,
+                    "reason": "Self-healing loop exceeded maximum retry attempts."
+                }))
+            ).into_response();
+        }
+    }
 
     let execute_future = state.pool.execute(
         &runtime,
@@ -85,12 +122,14 @@ pub async fn execute_handler(
             if let Some(ref m) = metrics {
                 let _ = state.metrics_tx.send(StreamEvent {
                     request_id: req.request_id.clone(),
+                    language: lang_str.clone(),
                     status: "rejected".to_string(),
                     metrics: m.clone(),
                 });
             }
             return Json(ExecuteResponse::Rejected {
                 request_id: req.request_id,
+                language: lang_str,
                 reason,
                 metrics,
             })
@@ -100,6 +139,7 @@ pub async fn execute_handler(
             // tokio::time::timeout elapsed
             return Json(ExecuteResponse::Rejected {
                 request_id: req.request_id,
+                language: lang_str,
                 reason: RejectReason::Timeout,
                 metrics: None, // Missing full context here since tokio timed out early
             })
@@ -115,14 +155,20 @@ pub async fn execute_handler(
 
     // 2. Map ExecutionResult to JSON Output Contract
     if final_status == "success" {
+        if let Some(parent_id) = &req.parent_request_id {
+            state.retry_counts.lock().unwrap().remove(parent_id);
+        }
+
         let _ = state.metrics_tx.send(StreamEvent {
             request_id: req.request_id.clone(),
+            language: lang_str.clone(),
             status: "success".to_string(),
             metrics: result.metrics.clone(),
         });
 
         Json(ExecuteResponse::Success {
             request_id: req.request_id,
+            language: lang_str,
             stdout: result.stdout,
             metrics: result.metrics,
         })
@@ -154,12 +200,14 @@ pub async fn execute_handler(
 
         let _ = state.metrics_tx.send(StreamEvent {
             request_id: req.request_id.clone(),
+            language: lang_str.clone(),
             status: "runtime_error".to_string(),
             metrics: result.metrics.clone(),
         });
 
         Json(ExecuteResponse::RuntimeError {
             request_id: req.request_id,
+            language: lang_str,
             metrics: result.metrics,
             error_telemetry: ErrorTelemetry {
                 error_type: error_type_str,
@@ -193,26 +241,45 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     }
 }
 
+#[derive(serde::Serialize)]
+struct RuntimeInfo {
+    id: String,
+    label: String,
+    status: String,
+    wasm_binary: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    runtime_notes: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+struct RuntimesResponse {
+    runtimes: Vec<RuntimeInfo>,
+}
+
 pub async fn runtimes_handler(State(state): State<AppState>) -> impl IntoResponse {
     let mut runtimes = vec![];
-    let mut has_python = false;
     
-    // QuickJS
-    runtimes.push(serde_json::json!({
-        "language": "javascript",
-        "status": "ready",
-        "runtime_notes": "JavaScript (QuickJS)"
-    }));
+    runtimes.push(RuntimeInfo {
+        id: "javascript".to_string(),
+        label: "JavaScript (QuickJS)".to_string(),
+        status: "ready".to_string(),
+        wasm_binary: "quickjs.wasm".to_string(),
+        runtime_notes: None,
+    });
     
-    if state.pool.python_module.is_some() {
-        has_python = true;
-    }
+    let has_python = state.pool.python_module.is_some();
     
-    runtimes.push(serde_json::json!({
-        "language": "python",
-        "status": if has_python { "ready" } else { "unavailable" },
-        "runtime_notes": if has_python { "MicroPython 1.x — standard library subset only" } else { "Not implemented" }
-    }));
+    runtimes.push(RuntimeInfo {
+        id: "python".to_string(),
+        label: "Python (MicroPython)".to_string(),
+        status: if has_python { "ready".to_string() } else { "unavailable".to_string() },
+        wasm_binary: "micropython-wasi.wasm".to_string(),
+        runtime_notes: if has_python { 
+            Some("MicroPython 1.x — standard library subset only".to_string()) 
+        } else { 
+            Some("Not implemented".to_string()) 
+        },
+    });
     
-    Json(runtimes)
+    Json(RuntimesResponse { runtimes })
 }

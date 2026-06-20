@@ -66,7 +66,7 @@ export const LatencyDistribution: React.FC<LatencyDistributionProps> = ({ stats 
           </div>
         </div>
         <div className="pctl-spark-area">
-          <div className="pctl-spark-label">Request latency · live sparkline placeholder</div>
+          <div className="pctl-spark-label">Request latency · live sparkline graph</div>
           <svg className="spark-svg" height="38" viewBox="0 0 240 38" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
             <defs>
               <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">

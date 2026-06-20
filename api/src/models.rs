@@ -7,10 +7,11 @@ pub const MAX_MEMORY_MB: usize = 256;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ExecuteRequest {
     pub request_id: String,
-    pub language: String,
+    pub language: Option<String>,
     pub code: String,
     pub timeout_ms: u64,
     pub memory_limit_mb: usize,
+    pub parent_request_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -18,17 +19,20 @@ pub struct ExecuteRequest {
 pub enum ExecuteResponse {
     Success {
         request_id: String,
+        language: String,
         stdout: String,
         metrics: ExecutionMetrics,
     },
     RuntimeError {
         request_id: String,
+        language: String,
         metrics: ExecutionMetrics,
         error_telemetry: ErrorTelemetry,
         llm_feedback_prompt: LlmFeedbackPrompt,
     },
     Rejected {
         request_id: String,
+        language: String,
         reason: RejectReason,
         #[serde(skip_serializing_if = "Option::is_none")]
         metrics: Option<ExecutionMetrics>,

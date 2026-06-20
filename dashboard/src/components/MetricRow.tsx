@@ -1,4 +1,5 @@
 import React from 'react';
+import { ConnectionStatus } from '../hooks/useTelemetry';
 
 interface MetricRowProps {
   stats: {
@@ -7,9 +8,10 @@ interface MetricRowProps {
     marshal: number;
     total: number;
   };
+  connectionStatus: ConnectionStatus;
 }
 
-export const MetricRow: React.FC<MetricRowProps> = ({ stats }) => {
+export const MetricRow: React.FC<MetricRowProps> = ({ stats, connectionStatus }) => {
   // Max possible times to calculate proportional bar width
   const MAX_CLONE = 1000;
   const MAX_EVAL = 5000;
@@ -18,6 +20,8 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats }) => {
   const getWidth = (val: number, max: number) => {
     return Math.min(100, Math.max(1, (val / max) * 100)) + '%';
   };
+
+  const staleText = connectionStatus === 'disconnected' ? ' (stale)' : '';
 
   return (
     <div className="metric-row">
@@ -30,7 +34,7 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats }) => {
         <div className="metric-bar">
           <div className="metric-bar-fill" style={{ width: stats.clone ? getWidth(stats.clone, MAX_CLONE) : '0%' }}></div>
         </div>
-        <div className="metric-delta">p50 · last 200 runs</div>
+        <div className="metric-delta">p50 · last 200 runs{staleText}</div>
       </div>
       
       <div className="metric">
@@ -42,7 +46,7 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats }) => {
         <div className="metric-bar">
           <div className="metric-bar-fill" style={{ width: stats.eval ? getWidth(stats.eval, MAX_EVAL) : '0%' }}></div>
         </div>
-        <div className="metric-delta">p50 · last 200 runs</div>
+        <div className="metric-delta">p50 · last 200 runs{staleText}</div>
       </div>
       
       <div className="metric">
@@ -54,7 +58,7 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats }) => {
         <div className="metric-bar">
           <div className="metric-bar-fill" style={{ width: stats.marshal ? getWidth(stats.marshal, MAX_MARSHAL) : '0%' }}></div>
         </div>
-        <div className="metric-delta">p50 · last 200 runs</div>
+        <div className="metric-delta">p50 · last 200 runs{staleText}</div>
       </div>
       
       <div className="metric">

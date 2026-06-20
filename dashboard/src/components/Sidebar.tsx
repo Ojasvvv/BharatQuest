@@ -1,11 +1,16 @@
 import React from 'react';
 
+import { Runtime } from '../hooks/useRuntimes';
+
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  runtimes?: Runtime[];
+  loading?: boolean;
+  error?: string | null;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, runtimes = [], loading, error }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -17,10 +22,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         <div className="env-dot"></div>
         <div className="env-text">localhost / dev</div>
       </div>
-      <div className="env-sub">
-        runtime: QuickJS WASM<br />
-        host: wasmtime<br />
-        architecture: wasm32-wasi
+      <div className="px-3 py-2" style={{ padding: '8px 12px', borderBottom: '1px solid #1f2937' }}>
+        <div className="text-xs text-gray-500 uppercase tracking-wider mb-1" style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+          Runtimes
+        </div>
+        {loading ? (
+          <div className="text-xs text-gray-500" style={{ fontSize: '12px', color: '#6b7280' }}>Loading...</div>
+        ) : error ? (
+          <div className="text-xs text-red-400" style={{ fontSize: '12px', color: '#f87171' }}>Could not reach backend</div>
+        ) : (
+          runtimes.map(runtime => (
+            <div key={runtime.id} className="flex items-center gap-2 py-0.5" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '2px 0' }}>
+              <span style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: runtime.status === 'ready' ? '#4ade80' : '#ef4444',
+                display: 'inline-block',
+                animation: runtime.status === 'ready' ? 'pulse 2s infinite' : 'none'
+              }} />
+              <span className="text-xs text-gray-300 font-mono" style={{ fontSize: '11px', color: '#d1d5db', fontFamily: 'monospace' }}>
+                {runtime.label}
+              </span>
+              <span className={`text-xs ml-auto ${
+                runtime.status === 'ready' ? 'text-green-500' : 'text-red-400'
+              }`} style={{ fontSize: '11px', marginLeft: 'auto', color: runtime.status === 'ready' ? '#22c55e' : '#f87171' }}>
+                {runtime.status}
+              </span>
+            </div>
+          ))
+        )}
       </div>
 
       <nav className="nav-section">

@@ -9,6 +9,11 @@ export const Waterfall: React.FC<WaterfallProps> = ({ events }) => {
   // Show up to 6 recent items
   const recentEvents = events.slice(0, 6);
 
+  const RUNTIME_BADGE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+    javascript: { bg: '#166534', text: '#4ade80', label: 'JS' },
+    python:     { bg: '#1e3a5f', text: '#60a5fa', label: 'PY' },
+  };
+
   return (
     <div className="panel">
       <div className="panel-head">
@@ -40,9 +45,24 @@ export const Waterfall: React.FC<WaterfallProps> = ({ events }) => {
             const isErr = evt.status === 'runtime_error';
             const isOk = evt.status === 'success';
 
+            const badge = RUNTIME_BADGE_STYLES[evt.language] ?? { bg: '#374151', text: '#9ca3af', label: '??' };
+
             return (
               <div className="waterfall-row" key={evt.request_id + idx}>
-                <div className="wf-id">{evt.request_id.split('-').pop()?.substring(0, 4) || 'req'}</div>
+                <div className="wf-id" style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ 
+                    background: badge.bg, 
+                    color: badge.text,
+                    padding: '1px 5px',
+                    borderRadius: '3px',
+                    fontSize: '10px',
+                    fontFamily: 'monospace',
+                    marginRight: '8px'
+                  }}>
+                    {badge.label}
+                  </span>
+                  {evt.request_id.split('-').pop()?.substring(0, 4) || 'req'}
+                </div>
                 <div className="wf-bar-track">
                   {isTrapped ? (
                     <div className="wf-seg-fail" style={{ width: '100%' }}></div>

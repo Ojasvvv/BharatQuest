@@ -40,13 +40,26 @@ async fn main() {
     let pool = RuntimePool::init().await.expect("Failed to initialize RuntimePool");
     let state = AppState::new(pool);
 
+    let retry_counts = state.retry_counts.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(300));
+        loop {
+            interval.tick().await;
+            let now = std::time::Instant::now();
+            let mut counts = retry_counts.lock().unwrap();
+            counts.retain(|_, &mut (_, timestamp)| {
+                now.duration_since(timestamp).as_secs() < 600
+            });
+        }
+    });
+
     let app = build_app(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
         .await
-        .expect("failed to bind to port 3000");
+        .expect("failed to bind to port 8080");
 
-    tracing::info!("Listening on 0.0.0.0:3000");
+    tracing::info!("Listening on 0.0.0.0:8080");
 
     axum::serve(listener, app)
         .await
