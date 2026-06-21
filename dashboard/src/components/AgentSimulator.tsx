@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Runtime } from '../hooks/useRuntimes';
+import type { Runtime } from '../hooks/useRuntimes';
 
 interface AgentSimulatorProps {
   runtimes?: Runtime[];

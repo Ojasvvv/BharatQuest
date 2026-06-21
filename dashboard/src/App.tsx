@@ -1,10 +1,9 @@
-import React from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { MetricRow } from './components/MetricRow';
 import { Waterfall } from './components/Waterfall';
 import { LatencyDistribution } from './components/LatencyDistribution';
-import { AgentSimulator } from './components/AgentSimulator';
+import { LiveAgentDemo } from './components/LiveAgentDemo';
 import { HowItWorks } from './components/HowItWorks';
 import { useTelemetry } from './hooks/useTelemetry';
 import { useState } from 'react';
@@ -12,7 +11,7 @@ import { useState } from 'react';
 import { useRuntimes } from './hooks/useRuntimes';
 
 function App() {
-  const { events, connectionStatus, lastMessageTime, stats } = useTelemetry('ws://127.0.0.1:8080/v1/execute/stream');
+  const { events, connectionStatus, lastMessageTime, stats } = useTelemetry('wss://bharatquest.onrender.com/v1/execute/stream');
   const { runtimes, loading: runtimesLoading, error: runtimesError } = useRuntimes();
   const [activeTab, setActiveTab] = useState('telemetry');
 
@@ -29,7 +28,7 @@ function App() {
                 <Waterfall events={events} />
                 <LatencyDistribution stats={stats.totalStats} />
               </div>
-              <AgentSimulator runtimes={runtimes} />
+              <LiveAgentDemo />
             </>
           ) : activeTab === 'how-it-works' ? (
             <HowItWorks />

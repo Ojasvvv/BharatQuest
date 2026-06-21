@@ -24,7 +24,7 @@ export function useRuntimes(): UseRuntimesResult {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/v1/runtimes')
+      const res = await fetch('https://bharatquest.onrender.com/v1/runtimes')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setRuntimes(data.runtimes)

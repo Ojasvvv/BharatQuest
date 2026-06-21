@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { ConnectionStatus } from '../hooks/useTelemetry';
+import type { ConnectionStatus } from '../hooks/useTelemetry';
 
 interface TopBarProps {
   connectionStatus: ConnectionStatus;

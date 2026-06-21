@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Runtime } from '../hooks/useRuntimes';
+import type { Runtime } from '../hooks/useRuntimes';
 
 interface SidebarProps {
   activeTab: string;
@@ -18,10 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, runti
         <div className="brand-name">Apatheia</div>
       </div>
 
-      <div className="env-badge">
-        <div className="env-dot"></div>
-        <div className="env-text">localhost / dev</div>
-      </div>
+
       <div className="px-3 py-2" style={{ padding: '8px 12px', borderBottom: '1px solid #1f2937' }}>
         <div className="text-xs text-gray-500 uppercase tracking-wider mb-1" style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
           Runtimes

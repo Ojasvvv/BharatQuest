@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConnectionStatus } from '../hooks/useTelemetry';
+import type { ConnectionStatus } from '../hooks/useTelemetry';
 
 interface MetricRowProps {
   stats: {
