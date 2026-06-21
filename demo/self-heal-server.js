@@ -202,6 +202,12 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'GET') {
+        if (req.url === '/health') {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('ok');
+            return;
+        }
+
         let filePath = req.url === '/' ? '/index.html' : req.url;
         // strip query params for file lookup
         filePath = filePath.split('?')[0];
