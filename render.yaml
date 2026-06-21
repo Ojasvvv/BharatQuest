@@ -7,7 +7,7 @@ services:
     startCommand: ./target/release/apatheia-api
     envVars:
       - key: FETCH_ENABLED
-        value: "false"
+        value: "true"
       - key: WASM_BINARY_DIR
         value: "./wasm-runtimes"
       - key: APATHEIA_API_KEYS
