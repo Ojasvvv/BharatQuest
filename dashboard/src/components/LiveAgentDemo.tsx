@@ -11,7 +11,7 @@ export const LiveAgentDemo: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [events, setEvents] = useState<SseEvent[]>([]);
   const eventSourceRef = useRef<EventSource | null>(null);
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const startLoop = () => {
     if (isRunning) return;
@@ -57,7 +57,9 @@ export const LiveAgentDemo: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current && events.length > 0) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   }, [events]);
 
   return (
@@ -101,7 +103,7 @@ export const LiveAgentDemo: React.FC = () => {
         </div>
       </div>
       
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '400px', overflowY: 'auto', background: '#0f172a' }}>
+      <div ref={scrollContainerRef} style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '400px', overflowY: 'auto', background: '#0f172a' }}>
         {events.length === 0 && !isRunning && (
            <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '20px' }}>
              Click "Start Agent" to begin live streaming. Ensure self-heal-server is running on port 3001.
@@ -119,9 +121,14 @@ export const LiveAgentDemo: React.FC = () => {
           }
 
           if (ev.type === 'llm_generating') {
+             const isLatest = i === events.length - 1 && isRunning;
              return (
                <div key={i} style={{ color: '#eab308', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                 <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #eab308', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                 {isLatest ? (
+                    <div className="spinner" style={{ width: '12px', height: '12px', border: '2px solid #eab308', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                 ) : (
+                    <div style={{ width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</div>
+                 )}
                  🧠 Iteration {ev.data.iteration}: Asking Groq (Llama 3.3)...
                </div>
              );
@@ -196,7 +203,7 @@ export const LiveAgentDemo: React.FC = () => {
 
           return null;
         })}
-        <div ref={logsEndRef} />
+        <div />
       </div>
       <style>{`
         @keyframes spin { 100% { transform: rotate(360deg); } }
