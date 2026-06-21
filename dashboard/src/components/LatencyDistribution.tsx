@@ -35,7 +35,7 @@ export const LatencyDistribution: React.FC<LatencyDistributionProps> = ({ stats 
                 <div className="pctl-fill" style={{ width: getWidth(stats.p50) }}></div>
               </div>
             </div>
-            <div className="pctl-value">{stats.p50 ? stats.p50.toLocaleString() : '-'}<span className="pctl-unit">µs</span></div>
+            <div className="pctl-value">{stats.p50 ? (stats.p50 / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}<span className="pctl-unit">ms</span></div>
           </div>
           <div className="pctl-row">
             <div className="pctl-left">
@@ -44,7 +44,7 @@ export const LatencyDistribution: React.FC<LatencyDistributionProps> = ({ stats 
                 <div className="pctl-fill" style={{ width: getWidth(stats.p90) }}></div>
               </div>
             </div>
-            <div className="pctl-value">{stats.p90 ? stats.p90.toLocaleString() : '-'}<span className="pctl-unit">µs</span></div>
+            <div className="pctl-value">{stats.p90 ? (stats.p90 / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}<span className="pctl-unit">ms</span></div>
           </div>
           <div className="pctl-row">
             <div className="pctl-left">
@@ -53,7 +53,7 @@ export const LatencyDistribution: React.FC<LatencyDistributionProps> = ({ stats 
                 <div className="pctl-fill warn" style={{ width: getWidth(stats.p99) }}></div>
               </div>
             </div>
-            <div className="pctl-value">{stats.p99 ? stats.p99.toLocaleString() : '-'}<span className="pctl-unit">µs</span></div>
+            <div className="pctl-value">{stats.p99 ? (stats.p99 / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}<span className="pctl-unit">ms</span></div>
           </div>
           <div className="pctl-row">
             <div className="pctl-left">
@@ -62,7 +62,7 @@ export const LatencyDistribution: React.FC<LatencyDistributionProps> = ({ stats 
                 <div className="pctl-fill crit" style={{ width: getWidth(stats.max) }}></div>
               </div>
             </div>
-            <div className="pctl-value">{stats.max ? stats.max.toLocaleString() : '-'}<span className="pctl-unit">µs</span></div>
+            <div className="pctl-value">{stats.max ? (stats.max / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}<span className="pctl-unit">ms</span></div>
           </div>
         </div>
         <div className="pctl-spark-area">

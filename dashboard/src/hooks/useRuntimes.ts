@@ -21,13 +21,12 @@ export function useRuntimes(): UseRuntimesResult {
   const [error, setError] = useState<string | null>(null)
 
   const fetch_runtimes = useCallback(async () => {
-    setLoading(true)
-    setError(null)
     try {
       const res = await fetch('https://bharatquest.onrender.com/v1/runtimes')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       setRuntimes(data.runtimes)
+      setError(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to fetch runtimes')
     } finally {

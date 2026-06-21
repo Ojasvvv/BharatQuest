@@ -28,8 +28,8 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats, connectionStatus })
       <div className="metric">
         <div className="metric-label">Instance clone</div>
         <div className="metric-value-row">
-          <div className="metric-value">{stats.clone || '-'}</div>
-          <div className="metric-unit">µs</div>
+          <div className="metric-value">{stats.clone ? (stats.clone / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}</div>
+          <div className="metric-unit">ms</div>
         </div>
         <div className="metric-bar">
           <div className="metric-bar-fill" style={{ width: stats.clone ? getWidth(stats.clone, MAX_CLONE) : '0%' }}></div>
@@ -40,8 +40,8 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats, connectionStatus })
       <div className="metric">
         <div className="metric-label">JS evaluation</div>
         <div className="metric-value-row">
-          <div className="metric-value">{stats.eval || '-'}</div>
-          <div className="metric-unit">µs</div>
+          <div className="metric-value">{stats.eval ? (stats.eval / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}</div>
+          <div className="metric-unit">ms</div>
         </div>
         <div className="metric-bar">
           <div className="metric-bar-fill" style={{ width: stats.eval ? getWidth(stats.eval, MAX_EVAL) : '0%' }}></div>
@@ -52,8 +52,8 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats, connectionStatus })
       <div className="metric">
         <div className="metric-label">Memory marshal</div>
         <div className="metric-value-row">
-          <div className="metric-value">{stats.marshal || '-'}</div>
-          <div className="metric-unit">µs</div>
+          <div className="metric-value">{stats.marshal ? (stats.marshal / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}</div>
+          <div className="metric-unit">ms</div>
         </div>
         <div className="metric-bar">
           <div className="metric-bar-fill" style={{ width: stats.marshal ? getWidth(stats.marshal, MAX_MARSHAL) : '0%' }}></div>
@@ -64,8 +64,8 @@ export const MetricRow: React.FC<MetricRowProps> = ({ stats, connectionStatus })
       <div className="metric">
         <div className="metric-label">Total request</div>
         <div className="metric-value-row">
-          <div className="metric-value">{stats.total || '-'}</div>
-          <div className="metric-unit">µs</div>
+          <div className="metric-value">{stats.total ? (stats.total / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 }) : '-'}</div>
+          <div className="metric-unit">ms</div>
         </div>
         <div className="metric-bar" style={{ background: 'var(--mint-dim)' }}>
           <div className="metric-bar-fill" style={{ width: '100%', background: 'var(--mint)', opacity: 1 }}></div>

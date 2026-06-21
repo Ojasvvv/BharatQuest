@@ -79,7 +79,7 @@ export const Waterfall: React.FC<WaterfallProps> = ({ events }) => {
                   {isErr && <div className="dot-err"></div>}
                   {isOk && <div className="dot-ok"></div>}
                 </div>
-                <div className="wf-total">{total.toLocaleString()}µs</div>
+                <div className="wf-total">{(total / 1000).toLocaleString(undefined, { maximumFractionDigits: 3 })}ms</div>
               </div>
             );
           })

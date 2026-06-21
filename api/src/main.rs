@@ -61,11 +61,14 @@ async fn main() {
 
     let app = build_app(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let addr = format!("0.0.0.0:{}", port);
+    
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
-        .expect("failed to bind to port 8080");
+        .expect("failed to bind to port");
 
-    tracing::info!("Listening on 0.0.0.0:8080");
+    tracing::info!("Listening on {}", addr);
 
     axum::serve(listener, app)
         .await
