@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 use dashmap::DashMap;
 use governor::DefaultDirectRateLimiter;
+use rusqlite::Connection;
 
 #[derive(Clone, Serialize)]
 pub struct StreamEvent {
@@ -24,6 +25,7 @@ pub struct AppState {
     pub retry_counts: Arc<Mutex<HashMap<String, (u8, Instant)>>>,
     pub valid_api_keys: Arc<Vec<String>>,
     pub rate_limiters: Arc<DashMap<String, DefaultDirectRateLimiter>>,
+    pub db: Arc<Mutex<Connection>>,
 }
 
 impl AppState {
@@ -37,12 +39,30 @@ impl AppState {
             .filter(|s| !s.is_empty())
             .collect();
             
+        let conn = Connection::open("metrics.db").expect("Failed to open SQLite database");
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS executions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                language TEXT NOT NULL,
+                instance_clone_time_us INTEGER NOT NULL,
+                execution_time_us INTEGER NOT NULL,
+                memory_marshal_us INTEGER NOT NULL,
+                total_time_us INTEGER NOT NULL,
+                fuel_consumed INTEGER NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        ).expect("Failed to create executions table");
+
         Self {
             pool: Arc::new(pool),
             metrics_tx,
             retry_counts: Arc::new(Mutex::new(HashMap::new())),
             valid_api_keys: Arc::new(valid_api_keys),
             rate_limiters: Arc::new(DashMap::new()),
+            db: Arc::new(Mutex::new(conn)),
         }
     }
 }

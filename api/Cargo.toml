@@ -21,6 +21,7 @@ apatheia-ffi-bridge = { path = "../ffi-bridge" }
 apatheia-telemetry = { path = "../telemetry" }
 dashmap = "6.2.1"
 governor = "0.10.4"
+rusqlite = { version = "0.40.1", features = ["bundled"] }
 
 [dev-dependencies]
 http-body-util = "0.1.0"

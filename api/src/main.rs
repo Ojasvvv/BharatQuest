@@ -18,7 +18,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use std::path::PathBuf;
+
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use crate::state::AppState;
 
@@ -26,6 +26,7 @@ pub fn build_app(state: AppState) -> Router {
     let protected_routes = Router::new()
         .route("/v1/execute", post(handlers::execute_handler))
         .route("/v1/execute/stream", get(handlers::stream_metrics_handler))
+        .route("/v1/metrics/history", get(handlers::metrics_history_handler))
         .route_layer(axum::middleware::from_fn_with_state(state.clone(), middleware::auth_and_rate_limit));
 
     Router::new()

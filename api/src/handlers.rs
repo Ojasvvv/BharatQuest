@@ -9,7 +9,6 @@ use apatheia_engine::error::EngineError;
 
 use crate::models::{
     ErrorTelemetry, ExecuteRequest, ExecuteResponse, LlmFeedbackPrompt, RejectReason,
-    MAX_MEMORY_MB, MAX_TIMEOUT_MS,
 };
 use crate::state::{AppState, StreamEvent};
 
@@ -109,6 +108,7 @@ pub async fn execute_handler(
                 EngineError::FuelExhausted { metrics, .. } => (RejectReason::OutOfFuel, Some(metrics)),
                 EngineError::WallClockTimeout { metrics, .. } => (RejectReason::Timeout, Some(metrics)),
                 EngineError::MemoryLimitExceeded { metrics, .. } => (RejectReason::OutOfMemory, Some(metrics)),
+                EngineError::EvalError { metrics, .. } => (RejectReason::InvalidInput, metrics),
                 EngineError::RuntimeUnavailable(lang) => {
                     return (
                         StatusCode::SERVICE_UNAVAILABLE,
@@ -127,6 +127,10 @@ pub async fn execute_handler(
                     status: "rejected".to_string(),
                     metrics: m.clone(),
                 });
+                record_execution(&state, req.request_id.clone(), "rejected".to_string(), lang_str.clone(), m.clone());
+            } else {
+                let dummy = apatheia_telemetry::ExecutionMetrics { instance_clone_time_us: 0, execution_time_us: 0, memory_marshal_us: 0, total_time_us: 0, fuel_consumed: 0 };
+                record_execution(&state, req.request_id.clone(), "rejected".to_string(), lang_str.clone(), dummy);
             }
             return Json(ExecuteResponse::Rejected {
                 request_id: req.request_id,
@@ -138,6 +142,8 @@ pub async fn execute_handler(
         }
         Err(_) => {
             // tokio::time::timeout elapsed
+            let dummy = apatheia_telemetry::ExecutionMetrics { instance_clone_time_us: 0, execution_time_us: 0, memory_marshal_us: 0, total_time_us: 0, fuel_consumed: 0 };
+            record_execution(&state, req.request_id.clone(), "rejected".to_string(), lang_str.clone(), dummy);
             return Json(ExecuteResponse::Rejected {
                 request_id: req.request_id,
                 language: lang_str,
@@ -166,6 +172,8 @@ pub async fn execute_handler(
             status: "success".to_string(),
             metrics: result.metrics.clone(),
         });
+        
+        record_execution(&state, req.request_id.clone(), "success".to_string(), lang_str.clone(), result.metrics.clone());
 
         Json(ExecuteResponse::Success {
             request_id: req.request_id,
@@ -191,7 +199,14 @@ pub async fn execute_handler(
                 apatheia_engine::error::JsErrorType::Runtime => "RuntimeError".to_string(),
                 apatheia_engine::error::JsErrorType::Parse => "SyntaxError".to_string(),
             };
-            (type_str, js_err.message.clone(), js_err.stack_trace.clone())
+            let cleaned_msg = js_err.message
+                .lines()
+                .filter(|line| !line.starts_with("DEBUG "))
+                .collect::<Vec<_>>()
+                .join("\n")
+                .trim()
+                .to_string();
+            (type_str, cleaned_msg.clone(), Some(cleaned_msg))
         };
 
         let llm_content = format!(
@@ -205,6 +220,8 @@ pub async fn execute_handler(
             status: "runtime_error".to_string(),
             metrics: result.metrics.clone(),
         });
+        
+        record_execution(&state, req.request_id.clone(), "runtime_error".to_string(), lang_str.clone(), result.metrics.clone());
 
         Json(ExecuteResponse::RuntimeError {
             request_id: req.request_id,
@@ -283,4 +300,80 @@ pub async fn runtimes_handler(State(state): State<AppState>) -> impl IntoRespons
     });
     
     Json(RuntimesResponse { runtimes })
+}
+
+fn record_execution(
+    state: &AppState,
+    request_id: String,
+    status: String,
+    language: String,
+    metrics: apatheia_telemetry::ExecutionMetrics,
+) {
+    let db = state.db.clone();
+    tokio::task::spawn_blocking(move || {
+        if let Ok(conn) = db.lock() {
+            let _ = conn.execute(
+                "INSERT INTO executions (request_id, status, language, instance_clone_time_us, execution_time_us, memory_marshal_us, total_time_us, fuel_consumed)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                rusqlite::params![
+                    request_id,
+                    status,
+                    language,
+                    metrics.instance_clone_time_us as i64,
+                    metrics.execution_time_us as i64,
+                    metrics.memory_marshal_us as i64,
+                    metrics.total_time_us as i64,
+                    metrics.fuel_consumed as i64,
+                ],
+            );
+        }
+    });
+}
+
+#[derive(serde::Serialize)]
+pub struct ExecutionHistoryRow {
+    request_id: String,
+    status: String,
+    language: String,
+    metrics: apatheia_telemetry::ExecutionMetrics,
+    created_at: String,
+}
+
+pub async fn metrics_history_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let db = state.db.clone();
+    
+    let result = tokio::task::spawn_blocking(move || {
+        let conn = db.lock().unwrap();
+        let mut stmt = conn.prepare("
+            SELECT request_id, status, language, instance_clone_time_us, execution_time_us, memory_marshal_us, total_time_us, fuel_consumed, created_at 
+            FROM executions 
+            ORDER BY id DESC LIMIT 50
+        ").unwrap();
+        
+        let rows = stmt.query_map([], |row| {
+            Ok(ExecutionHistoryRow {
+                request_id: row.get(0)?,
+                status: row.get(1)?,
+                language: row.get(2)?,
+                metrics: apatheia_telemetry::ExecutionMetrics {
+                    instance_clone_time_us: row.get::<_, i64>(3)? as u64,
+                    execution_time_us: row.get::<_, i64>(4)? as u64,
+                    memory_marshal_us: row.get::<_, i64>(5)? as u64,
+                    total_time_us: row.get::<_, i64>(6)? as u64,
+                    fuel_consumed: row.get::<_, i64>(7)? as u64,
+                },
+                created_at: row.get(8)?,
+            })
+        }).unwrap();
+        
+        let mut history = Vec::new();
+        for r in rows {
+            if let Ok(row) = r {
+                history.push(row);
+            }
+        }
+        history
+    }).await.unwrap();
+
+    axum::Json(result)
 }
