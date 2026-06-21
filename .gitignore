@@ -31,4 +31,4 @@ Thumbs.db
 *.log
 *.txt
 wasi-sdk-25.0-x86_64-linux/
-target/
+target/metrics.db
