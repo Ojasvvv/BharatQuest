@@ -32,3 +32,6 @@ Thumbs.db
 *.txt
 wasi-sdk-25.0-x86_64-linux/
 target/metrics.db
+*.db
+*.sqlite
+*.sqlite3
