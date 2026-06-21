@@ -37,13 +37,16 @@ pub async fn auth_and_rate_limit(
     }
 
     // 3. Rate Limiting (5 requests per second per key, burst of 10)
-    let limiter = state.rate_limiters.entry(api_key.clone()).or_insert_with(|| {
-        let quota = Quota::per_second(NonZeroU32::new(5).unwrap())
-            .allow_burst(NonZeroU32::new(10).unwrap());
-        RateLimiter::direct(quota)
-    });
+    let check_result = {
+        let limiter = state.rate_limiters.entry(api_key.clone()).or_insert_with(|| {
+            let quota = Quota::per_second(NonZeroU32::new(5).unwrap())
+                .allow_burst(NonZeroU32::new(10).unwrap());
+            RateLimiter::direct(quota)
+        });
+        limiter.check()
+    };
 
-    if let Err(not_until) = limiter.check() {
+    if let Err(not_until) = check_result {
         let wait_time = not_until.wait_time_from(governor::clock::DefaultClock::default().now());
         
         let mut response = (

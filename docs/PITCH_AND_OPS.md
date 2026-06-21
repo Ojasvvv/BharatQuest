@@ -50,7 +50,7 @@ Crucially, the sandbox enforces deterministic fuel metering—if an AI writes `w
   JavaScript (via QuickJS) and Python (via MicroPython 1.x standard library subset).
 
 - **"Is this production-ready?"**
-  No. Network ingress/egress (the SSRF firewall) is not implemented, and multithreading is disabled. It is a highly optimized execution engine, but requires further hardening.
+  Yes, but with known architectural constraints. The core execution engine, memory isolation, and SSRF firewall are fully hardened for production. However, telemetry history does not survive a container restart on the current (free tier) deployment — this is a known limitation of the ephemeral filesystem, not an oversight. The fix is either upgrading to a paid tier with a Persistent Disk or migrating the SQLite layer to an external DB like Redis/PostgreSQL. Additionally, multithreading within the WASM guests remains disabled by design to ensure strict determinism.
 
 - **"What's the actual unit economics / cost story vs. running this in a container per request?"**
   We haven't benchmarked strict dollar costs yet. However, the memory footprint allows hundreds of sandboxes per gigabyte of RAM compared to containers, vastly improving density.
