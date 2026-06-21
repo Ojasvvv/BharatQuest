@@ -47,8 +47,4 @@ To run the live agent demo with the React dashboard:
 *   **Mode 1 (Realistic Bug):** Prompts the LLM to process an array of objects but intentionally includes a malformed object. This naturally triggers a `TypeError: Cannot read properties of undefined` in the generated code, demonstrating the Apatheia engine catching the error and seamlessly relaying the feedback prompt to Groq for self-healing.
 *   **Mode 2 (Dangerous Code):** Prompts the LLM to write a massive, unoptimized loop to calculate prime numbers up to 50,000,000. This demonstrates Apatheia's deterministic fuel metering or wall-clock watchdog safely rejecting the runaway code without crashing the server.
 
-## Screen Recording Tips
-For the best visual demonstration:
-1.  **Terminal Font:** Increase your terminal font size to at least 16pt.
-2.  **Split Screen:** Run the Apatheia live metrics dashboard in a browser window on the right side of the screen, and the terminal on the left. The live dashboard will update with the identical `request_id` and metrics instantly, proving the execution is happening on live servers.
-3.  **Colors:** Ensure your terminal supports standard ANSI colors (the script color-codes success/error lines).
+
