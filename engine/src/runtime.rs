@@ -169,13 +169,13 @@ impl RuntimeHandle {
                 Runtime::JavaScript => {
                     let eval_func = instance
                         .get_typed_func::<(u32, u32), i32>(&mut store, "eval_js")
-                        .map_err(|e| EngineError::EvalError(e.to_string()))?;
+                        .map_err(|e| EngineError::EvalError { message: e.to_string(), metrics: None })?;
                     eval_func.call(&mut store, (ptr, len))
                 }
                 _ => {
                     let eval_func = instance
                         .get_typed_func::<u32, i32>(&mut store, "eval_code")
-                        .map_err(|e| EngineError::EvalError(e.to_string()))?;
+                        .map_err(|e| EngineError::EvalError { message: e.to_string(), metrics: None })?;
                     eval_func.call(&mut store, len)
                 }
             };
@@ -206,7 +206,7 @@ impl RuntimeHandle {
                         }
                     }
                     metrics.total_time_us = total_start.elapsed().as_micros() as u64;
-                    return Err(EngineError::EvalError(e.to_string()));
+                    return Err(EngineError::EvalError { message: e.to_string(), metrics: Some(metrics) });
                 }
             };
 
@@ -269,7 +269,7 @@ impl RuntimeHandle {
         // Wrap the spawned blocking task in a wall-clock timeout
         match tokio::time::timeout(Duration::from_millis(timeout_ms), execute_future).await {
             Ok(Ok(result)) => result,
-            Ok(Err(join_err)) => Err(EngineError::EvalError(join_err.to_string())),
+            Ok(Err(join_err)) => Err(EngineError::EvalError { message: join_err.to_string(), metrics: None }),
             Err(_) => {
                 // Time out elapsed
                 let metrics = ExecutionMetrics {

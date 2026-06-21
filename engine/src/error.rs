@@ -53,8 +53,8 @@ pub enum EngineError {
     #[error("Memory marshaling error: {0}")]
     MemoryMarshal(String),
 
-    #[error("QuickJS eval error: {0}")]
-    EvalError(String),
+    #[error("QuickJS eval error: {message}")]
+    EvalError { message: String, metrics: Option<ExecutionMetrics> },
 
     #[error("Runtime unavailable: {0}")]
     RuntimeUnavailable(String),
