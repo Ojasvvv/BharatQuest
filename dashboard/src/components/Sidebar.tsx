@@ -49,6 +49,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, runti
         )}
       </div>
 
+      <div className="nav-container">
+
       <nav className="nav-section">
         <div className="nav-label">Monitoring</div>
         <div 
@@ -90,6 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, runti
           LinkedIn
         </a>
       </nav>
+      </div>
 
       <div className="sidebar-vitals">
         <div className="vitals-label">Sandbox Configuration</div>
